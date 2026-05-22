@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#FAF7F2">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Listo">
+  <title>Listo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Onboarding (premier lancement) -->
+  <div id="onboarding-overlay">
+    <div id="onboarding-card">
+      <div id="onboarding-logo">Listo 🛒</div>
+      <div id="onboarding-title">Qui es-tu ?</div>
+      <div id="onboarding-sub">Ton choix sera mémorisé sur cet appareil</div>
+      <div id="onboarding-buttons">
+        <button class="onboarding-btn" onclick="App.setUser('J', 'Jonathan')">Jonathan</button>
+        <button class="onboarding-btn" onclick="App.setUser('N', 'Noémie')">Noémie</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div id="loading-overlay">
+    <div class="loading-logo">Listo 🛒</div>
+    <div class="spinner"></div>
+    <div class="loading-msg">Connexion…</div>
+  </div>
+
+  <!-- App -->
+  <div id="app">
+    <header>
+      <div class="header-row">
+        <div>
+          <h1>Listo 🛒</h1>
+          <div id="header-subtitle" class="subtitle">Chargement…</div>
+        </div>
+        <div class="header-right">
+          <span id="user-badge" class="user-badge"></span>
+          <div id="sync-dot" class="sync-dot" title="Sync"></div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ① LISTE -->
+    <div class="screen active" id="screen-list">
+      <div id="list-content"></div>
+      <div id="finish-bar" style="display:none;">
+        <button id="finish-btn" onclick="App.finishShopping()">
+          ✅ Terminer les courses
+        </button>
+      </div>
+    </div>
+
+    <!-- ② AJOUTER -->
+    <div class="screen" id="screen-add">
+      <div class="screen-inner">
+        <div class="form-label">Rechercher sur Open Food Facts</div>
+        <div class="search-row">
+          <input class="form-input" type="text" id="off-input" placeholder="Ex: yaourt, dentifrice…" autocomplete="off">
+          <button class="btn-teal" onclick="App.searchOFF()">Chercher</button>
+        </div>
+        <div id="off-results"></div>
+
+        <div class="divider-text">ou saisir manuellement</div>
+
+        <div class="form-group">
+          <label class="form-label">Nom de l'article *</label>
+          <input class="form-input" type="text" id="manual-name" placeholder="Ex: Chips, Couches T3…" autocomplete="off">
+        </div>
+        <div class="two-col">
+          <div class="form-group">
+            <label class="form-label">Rayon</label>
+            <select class="form-input" id="manual-category">
+              <option value="Frais">🧊 Frais</option>
+              <option value="Épicerie" selected>🛒 Épicerie</option>
+              <option value="Bébé">👶 Bébé</option>
+              <option value="Hygiène">🧴 Hygiène</option>
+              <option value="Surgelés">❄️ Surgelés</option>
+              <option value="Boissons">🥤 Boissons</option>
+              <option value="Autre">📦 Autre</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Quantité</label>
+            <input class="form-input" type="number" id="manual-qty" value="1" min="1" inputmode="numeric">
+          </div>
+        </div>
+        <button class="btn-teal full" onclick="App.addManual()">+ Ajouter à la liste</button>
+      </div>
+    </div>
+
+    <!-- ③ HISTORIQUE -->
+    <div class="screen" id="screen-history">
+      <div id="history-content"></div>
+    </div>
+
+    <nav>
+      <button class="nav-btn active" data-screen="list" onclick="App.switchScreen('list')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        Liste
+      </button>
+      <button class="nav-btn" data-screen="add" onclick="App.switchScreen('add')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Ajouter
+      </button>
+      <button class="nav-btn" data-screen="history" onclick="App.switchScreen('history')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="12 8 12 12 14 14"/><path d="M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5"/></svg>
+        Historique
+      </button>
+    </nav>
+  </div>
+
+  <div id="toast"></div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/emojis.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
