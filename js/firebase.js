@@ -1,4 +1,3 @@
-// ── FIREBASE CONFIG ──
 const firebaseConfig = {
   apiKey: "AIzaSyDsuWLg8hMaj8Dkq3-kycUVmVJvLfBTlSE",
   authDomain: "nojolist.firebaseapp.com",
@@ -13,22 +12,42 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 const DB = {
-  listRef: db.ref('list'),
-  historyRef: db.ref('history'),
+  // Listes
+  listsRef: () => db.ref('lists'),
+  listRef: (id) => db.ref(`lists/${id}`),
+  itemsRef: (listId) => db.ref(`lists/${listId}/items`),
 
-  onList(cb, errCb) {
-    this.listRef.on('value', snap => cb(snap.val()), errCb);
+  // Historique (global, partagé)
+  historyRef: () => db.ref('history'),
+
+  // Favoris (global, basé sur fréquence)
+  favoritesRef: () => db.ref('favorites'),
+
+  onLists(cb, errCb) {
+    this.listsRef().on('value', snap => cb(snap.val()), errCb);
   },
 
   onHistory(cb) {
-    this.historyRef.on('value', snap => cb(snap.val()));
+    this.historyRef().on('value', snap => cb(snap.val()));
   },
 
-  setList(obj) {
-    return this.listRef.set(obj && Object.keys(obj).length > 0 ? obj : null);
+  onFavorites(cb) {
+    this.favoritesRef().on('value', snap => cb(snap.val()));
+  },
+
+  setList(listId, data) {
+    return this.listRef(listId).set(data);
   },
 
   setHistory(obj) {
-    return this.historyRef.set(obj && Object.keys(obj).length > 0 ? obj : null);
+    return this.historyRef().set(obj && Object.keys(obj).length > 0 ? obj : null);
+  },
+
+  setFavorites(obj) {
+    return this.favoritesRef().set(obj && Object.keys(obj).length > 0 ? obj : null);
+  },
+
+  deleteList(listId) {
+    return this.listRef(listId).remove();
   }
 };

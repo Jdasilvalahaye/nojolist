@@ -1,27 +1,30 @@
 # Listo 🛒
 
-Liste de courses partagée pour Jonathan & Noémie.
+Liste de courses partagée — Jonathan & Noémie.
 
 ## Structure
 
 ```
 listo/
-├── index.html        # Structure HTML
+├── index.html
 ├── css/
-│   └── style.css     # Styles
+│   └── style.css
 ├── js/
-│   ├── firebase.js   # Config & helpers Firebase
-│   ├── emojis.js     # Mapping emojis produits
-│   └── app.js        # Logique principale
+│   ├── firebase.js   — config Firebase
+│   ├── emojis.js     — emojis & catégories
+│   └── app.js        — logique principale
 └── README.md
 ```
 
-## Technologies
+## Fonctionnalités
 
-- HTML / CSS / JS vanilla — aucun framework
-- Firebase Realtime Database — sync temps réel
-- Open Food Facts API v2 — recherche de produits
-
-## Déploiement
-
-Hébergé sur GitHub Pages : `https://<username>.github.io/listo/`
+- Listes multiples (créer / supprimer librement)
+- Ajout rapide avec autocomplétion (historique + favoris)
+- Favoris automatiques basés sur la fréquence
+- Quantité ajustable +/− directement sur chaque article
+- Commentaire par article
+- Édition après ajout
+- Terminer les courses : cochés archivés, non-cochés conservés
+- Historique avec réajout par article ou recréation complète
+- Sync temps réel Firebase (J & N voient la même liste)
+- Badge J / N sur chaque article
