@@ -258,7 +258,7 @@ const App = (() => {
 
     try {
       const res = await fetch(
-        `https://world.openfoodfacts.org/api/v2/search?search_terms=${encodeURIComponent(query)}&fields=product_name_fr,product_name,brands&page_size=8&lc=fr&countries_tags=en:france&sort_by=unique_scans_n`,
+        `https://api.allorigins.win/raw?url=${encodeURIComponent("https://world.openfoodfacts.org/api/v2/search?search_terms=" + encodeURIComponent(query) + "&fields=product_name_fr,product_name,brands&page_size=8&lc=fr&countries_tags=en:france&sort_by=unique_scans_n")}`,
       );
       const data = await res.json();
       const products = (data.products || []).filter((p) => p.product_name_fr || p.product_name);
