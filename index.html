@@ -63,9 +63,6 @@
   <div class="screen active" id="screen-list">
     <div id="favorites-bar"></div>
     <div id="list-content"></div>
-    <div id="finish-bar" style="display:none;">
-      <button id="finish-btn" onclick="App.finishShopping()">✅ Terminer les courses</button>
-    </div>
   </div>
 
   <!-- ② AJOUTER -->
@@ -117,6 +114,11 @@
   <!-- ③ HISTORIQUE -->
   <div class="screen" id="screen-history">
     <div id="history-content"></div>
+  </div>
+
+  <!-- FINISH BAR — en dehors des screens, dans le flex principal -->
+  <div id="finish-bar" style="display:none;">
+    <button id="finish-btn" onclick="App.finishShopping()">✅ Terminer les courses</button>
   </div>
 
   <nav>
