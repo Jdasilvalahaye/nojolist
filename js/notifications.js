@@ -2,6 +2,7 @@
 const VAPID_KEY = "BNeOA8ltjt2oKHPsJWCc2KFgjalvllvBGRiGDNvo-eV6bAeokvqOMSIwrZp0iVQzW4xW1-UIoPfK6EsQwuvpvcw";
 
 async function initNotifications(userInitial) {
+  console.log("initNotifications appelée pour:", userInitial);
   if (!("Notification" in window)) {
     console.log("Notifications non supportées");
     return;
