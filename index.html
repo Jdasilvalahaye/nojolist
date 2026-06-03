@@ -17,11 +17,11 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-
+ 
 <!-- Onboarding -->
 <div id="onboarding-overlay">
   <div id="onboarding-card">
-    <div class="ob-logo">Listo 🛒</div>
+    <div class="ob-logo">Nojolist 🛒</div>
     <div class="ob-title">Qui es-tu ?</div>
     <div class="ob-sub">Ton choix sera mémorisé sur cet appareil</div>
     <div class="ob-btns">
@@ -30,14 +30,14 @@
     </div>
   </div>
 </div>
-
+ 
 <!-- Loading -->
 <div id="loading-overlay">
-  <div class="loading-logo">Listo 🛒</div>
+  <div class="loading-logo">Nojolist 🛒</div>
   <div class="spinner"></div>
   <div class="loading-msg">Connexion…</div>
 </div>
-
+ 
 <!-- Modal liste -->
 <div id="modal-overlay" onclick="App.closeModal()">
   <div id="modal" onclick="event.stopPropagation()">
@@ -45,7 +45,7 @@
     <div id="modal-content"></div>
   </div>
 </div>
-
+ 
 <!-- App -->
 <div id="app">
   <header>
@@ -61,16 +61,13 @@
     </div>
     <div id="header-subtitle" class="subtitle">Chargement…</div>
   </header>
-
+ 
   <!-- ① LISTE -->
   <div class="screen active" id="screen-list">
     <div id="favorites-bar"></div>
     <div id="list-content"></div>
-    <div id="finish-bar" style="display:none;">
-      <button id="finish-btn" onclick="App.finishShopping()">✅ Terminer les courses</button>
-    </div>
   </div>
-
+ 
   <!-- ② AJOUTER -->
   <div class="screen" id="screen-add">
     <div class="screen-inner">
@@ -83,9 +80,9 @@
         </div>
         <div id="autocomplete-list"></div>
       </div>
-
+ 
       <div class="divider-text">options avancées</div>
-
+ 
       <div class="form-group">
         <label class="form-label">Nom *</label>
         <input class="form-input" type="text" id="adv-name" placeholder="Ex: Chips, Couches T3…" autocomplete="off">
@@ -116,12 +113,17 @@
       <button class="btn-teal full" onclick="App.addAdvanced()">+ Ajouter à la liste</button>
     </div>
   </div>
-
+ 
   <!-- ③ HISTORIQUE -->
   <div class="screen" id="screen-history">
     <div id="history-content"></div>
   </div>
-
+ 
+  <!-- FINISH BAR — ici, en dehors des screens, dans le flex principal -->
+  <div id="finish-bar" style="display:none;">
+    <button id="finish-btn" onclick="App.finishShopping()">✅ Terminer les courses</button>
+  </div>
+ 
   <nav>
     <button class="nav-btn active" data-screen="list" onclick="App.switchScreen('list')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
@@ -137,9 +139,9 @@
     </button>
   </nav>
 </div>
-
+ 
 <div id="toast"></div>
-
+ 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="js/firebase.js"></script>

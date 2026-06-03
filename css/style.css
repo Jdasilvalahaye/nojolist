@@ -216,9 +216,10 @@ nav {
 
 /* ── FINISH BAR ── */
 #finish-bar {
-  position: sticky; bottom: var(--nav-h);
   padding: 10px 16px;
-  background: var(--bg); border-top: 1px solid var(--border);
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
 }
 #finish-btn {
   width: 100%; padding: 13px;
