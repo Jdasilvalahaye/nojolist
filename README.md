@@ -1,4 +1,4 @@
-# Listo 🛒
+# Nojolist 🛒
 
 Liste de courses partagée — Jonathan & Noémie.
 
