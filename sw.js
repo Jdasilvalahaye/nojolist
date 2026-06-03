@@ -1,4 +1,4 @@
-const CACHE = "nojolist-v2";
+const CACHE = "nojolist-v3";
 const ASSETS = [
   "/nojolist/",
   "/nojolist/index.html",
@@ -22,9 +22,34 @@ self.addEventListener("activate", (e) => {
 });
 
 self.addEventListener("fetch", (e) => {
-  // Firebase et fonts : toujours réseau
   if (e.request.url.includes("firebase") || e.request.url.includes("googleapis") || e.request.url.includes("gstatic")) {
     return;
   }
   e.respondWith(caches.match(e.request).then((cached) => cached || fetch(e.request)));
+});
+
+// ── NOTIFICATIONS PUSH (Firebase Cloud Messaging) ──
+importScripts("https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js");
+
+firebase.initializeApp({
+  apiKey: "AIzaSyDsuWLg8hMaj8Dkq3-kycUVmVJvLfBTlSE",
+  authDomain: "nojolist.firebaseapp.com",
+  databaseURL: "https://nojolist-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "nojolist",
+  storageBucket: "nojolist.firebasestorage.app",
+  messagingSenderId: "655476142859",
+  appId: "1:655476142859:web:5f55b115288e3eff4ce80e",
+});
+
+const messaging = firebase.messaging();
+
+// Notification reçue en arrière-plan
+messaging.onBackgroundMessage((payload) => {
+  const { title, body } = payload.notification;
+  self.registration.showNotification(title, {
+    body,
+    icon: "/nojolist/icons/icon-192x192.png",
+    badge: "/nojolist/icons/icon-72x72.png",
+  });
 });
