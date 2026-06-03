@@ -43,6 +43,7 @@ const App = (() => {
       state.user = JSON.parse(saved);
       document.getElementById("onboarding-overlay").style.display = "none";
       updateUserBadge();
+      initNotifications(state.user.initial); // ← ajoute cette ligne
     }
   }
 
@@ -51,8 +52,7 @@ const App = (() => {
     localStorage.setItem("listo_user", JSON.stringify(state.user));
     document.getElementById("onboarding-overlay").style.display = "none";
     updateUserBadge();
-    initNotifications(state.user.initial);
-    initNotifications(initial);
+    initNotifications(initial); // ← garde seulement celle-ci
     showToast(`Bienvenue ${name} !`, "success");
   }
 
