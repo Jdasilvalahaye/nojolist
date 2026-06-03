@@ -82,7 +82,7 @@ header {
 /* ── SCREENS ── */
 .screen {
   flex: 1; overflow-y: auto; overflow-x: hidden;
-  display: none; padding-bottom: calc(var(--nav-h) + 16px);
+  display: none; padding-bottom: 16px;
 }
 .screen.active { display: block; }
 .screen::-webkit-scrollbar { display: none; }
