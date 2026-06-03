@@ -9,6 +9,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Nojolist">
   <title>Nojolist</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
@@ -18,7 +21,7 @@
 <!-- Onboarding -->
 <div id="onboarding-overlay">
   <div id="onboarding-card">
-    <div class="ob-logo">Nojolist 🛒</div>
+    <div class="ob-logo">Listo 🛒</div>
     <div class="ob-title">Qui es-tu ?</div>
     <div class="ob-sub">Ton choix sera mémorisé sur cet appareil</div>
     <div class="ob-btns">
@@ -30,7 +33,7 @@
 
 <!-- Loading -->
 <div id="loading-overlay">
-  <div class="loading-logo">Nojolist 🛒</div>
+  <div class="loading-logo">Listo 🛒</div>
   <div class="spinner"></div>
   <div class="loading-msg">Connexion…</div>
 </div>
@@ -63,6 +66,9 @@
   <div class="screen active" id="screen-list">
     <div id="favorites-bar"></div>
     <div id="list-content"></div>
+    <div id="finish-bar" style="display:none;">
+      <button id="finish-btn" onclick="App.finishShopping()">✅ Terminer les courses</button>
+    </div>
   </div>
 
   <!-- ② AJOUTER -->
@@ -116,11 +122,6 @@
     <div id="history-content"></div>
   </div>
 
-  <!-- FINISH BAR — en dehors des screens, dans le flex principal -->
-  <div id="finish-bar" style="display:none;">
-    <button id="finish-btn" onclick="App.finishShopping()">✅ Terminer les courses</button>
-  </div>
-
   <nav>
     <button class="nav-btn active" data-screen="list" onclick="App.switchScreen('list')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
@@ -144,5 +145,10 @@
 <script src="js/firebase.js"></script>
 <script src="js/emojis.js"></script>
 <script src="js/app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/nojolist/sw.js');
+  }
+</script>
 </body>
 </html>

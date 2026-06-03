@@ -1,0 +1,12 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="512" height="512" rx="90" fill="#FAF7F2"/>
+  <path d="M172 218 Q172 150 256 150 Q340 150 340 218" fill="none" stroke="#2E7D7F" stroke-width="28" stroke-linecap="round"/>
+  <rect x="130" y="225" width="252" height="160" rx="22" fill="#2E7D7F"/>
+  <line x1="130" y1="277" x2="382" y2="277" stroke="#FAF7F2" stroke-width="2.5" opacity="0.3"/>
+  <line x1="130" y1="330" x2="382" y2="330" stroke="#FAF7F2" stroke-width="2.5" opacity="0.3"/>
+  <line x1="210" y1="225" x2="210" y2="385" stroke="#FAF7F2" stroke-width="2.5" opacity="0.3"/>
+  <line x1="300" y1="225" x2="300" y2="385" stroke="#FAF7F2" stroke-width="2.5" opacity="0.3"/>
+  <rect x="130" y="355" width="252" height="30" rx="15" fill="#256264"/>
+  <text x="256" y="325" text-anchor="middle" dominant-baseline="central"
+    font-family="Georgia, serif" font-size="82" font-weight="400" fill="#FAF7F2" opacity="0.95">NL</text>
+</svg>
