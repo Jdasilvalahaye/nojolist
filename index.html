@@ -2,8 +2,10 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#FAF7F2">
+  <!-- viewport-fit=cover : permet d'utiliser les zones près de
+       l'encoche iPhone (on gère les marges via safe-area en CSS) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#FAF7F2" id="meta-theme">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -13,41 +15,46 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
- 
-<!-- Onboarding -->
+
+<!-- ════════ ONBOARDING (premier lancement) ════════ -->
 <div id="onboarding-overlay">
   <div id="onboarding-card">
-    <div class="ob-logo">Nojolist 🛒</div>
-    <div class="ob-title">Qui es-tu ?</div>
+    <div class="ob-logo">Nojolist <span class="ob-cart">🛒</span></div>
+    <div class="ob-title">Qui es-tu&nbsp;?</div>
     <div class="ob-sub">Ton choix sera mémorisé sur cet appareil</div>
     <div class="ob-btns">
-      <button class="ob-btn" onclick="App.setUser('J','Jonathan')">Jonathan</button>
-      <button class="ob-btn" onclick="App.setUser('N','Noémie')">Noémie</button>
+      <button class="ob-btn ob-j" onclick="App.setUser('J','Jonathan')"><span class="ob-avatar who-J">J</span>Jonathan</button>
+      <button class="ob-btn ob-n" onclick="App.setUser('N','Noémie')"><span class="ob-avatar who-N">N</span>Noémie</button>
     </div>
   </div>
 </div>
- 
-<!-- Loading -->
+
+<!-- ════════ ÉCRAN DE CHARGEMENT ════════ -->
 <div id="loading-overlay">
   <div class="loading-logo">Nojolist 🛒</div>
   <div class="spinner"></div>
   <div class="loading-msg">Connexion…</div>
 </div>
- 
-<!-- Modal liste -->
-<div id="modal-overlay" onclick="App.closeModal()">
-  <div id="modal" onclick="event.stopPropagation()">
+
+<!-- ════════ MODALE (bottom sheet réutilisable) ════════
+     Une seule modale dont app.js remplit le contenu :
+     listes, réglages, édition d'article, packs…
+     (fermeture gérée dans app.js : clic sur le fond sombre) -->
+<div id="modal-overlay">
+  <div id="modal">
     <div class="modal-handle"></div>
     <div id="modal-content"></div>
   </div>
 </div>
- 
-<!-- App -->
+
+<!-- ════════ APPLICATION ════════ -->
 <div id="app">
+
   <header>
     <div class="header-top">
       <button id="list-picker-btn" class="list-picker-btn" onclick="App.openListPicker()">
@@ -55,22 +62,42 @@
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
       </button>
       <div class="header-right">
-        <span id="user-badge" class="user-badge"></span>
-        <div id="sync-dot" class="sync-dot"></div>
+        <!-- Pastille de l'autre membre du foyer (visible si en ligne) -->
+        <span id="partner-badge" class="partner-badge" title="En ligne"></span>
+        <div id="sync-dot" class="sync-dot" title="Synchronisation"></div>
+        <!-- Avatar utilisateur → ouvre les réglages -->
+        <button id="user-badge" class="user-badge" onclick="App.openSettings()"></button>
       </div>
     </div>
     <div id="header-subtitle" class="subtitle">Chargement…</div>
   </header>
- 
-  <!-- ① LISTE -->
+
+  <!-- ════════ ① ÉCRAN LISTE ════════ -->
   <div class="screen active" id="screen-list">
+
+    <!-- Barre d'outils : recherche + Mode Courses -->
+    <div class="list-toolbar">
+      <div class="search-wrap">
+        <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" id="search-input" placeholder="Rechercher…" autocomplete="off">
+      </div>
+      <button id="shop-mode-btn" class="shop-mode-btn" onclick="App.toggleShoppingMode()">🛒 Mode courses</button>
+    </div>
+
+    <!-- Barre de progression (Mode Courses uniquement) -->
+    <div id="progress-wrap">
+      <div id="progress-bar"><div id="progress-fill"></div></div>
+      <div id="progress-label"></div>
+    </div>
+
     <div id="favorites-bar"></div>
     <div id="list-content"></div>
   </div>
- 
-  <!-- ② AJOUTER -->
+
+  <!-- ════════ ② ÉCRAN AJOUTER ════════ -->
   <div class="screen" id="screen-add">
     <div class="screen-inner">
+
       <div class="quick-add-wrap">
         <div class="form-label">Ajout rapide</div>
         <div class="quick-row">
@@ -80,20 +107,29 @@
         </div>
         <div id="autocomplete-list"></div>
       </div>
- 
+
+      <!-- PACKS : kits d'articles réutilisables (raclette, petit-déj…) -->
+      <div class="packs-wrap">
+        <div class="form-label-row">
+          <div class="form-label">📦 Mes packs</div>
+          <button class="btn-link" onclick="App.openPackCreator()">+ Créer</button>
+        </div>
+        <div id="packs-bar"><div class="packs-empty">Sauvegarde des kits d'articles (ex. «&nbsp;Raclette&nbsp;») pour les rajouter en un geste.</div></div>
+      </div>
+
       <div class="divider-text">options avancées</div>
- 
+
       <div class="form-group">
-        <label class="form-label">Nom *</label>
+        <label class="form-label" for="adv-name">Nom *</label>
         <input class="form-input" type="text" id="adv-name" placeholder="Ex: Chips, Couches T3…" autocomplete="off">
       </div>
       <div class="form-group">
-        <label class="form-label">Commentaire</label>
+        <label class="form-label" for="adv-note">Commentaire</label>
         <input class="form-input" type="text" id="adv-note" placeholder="Ex: prendre le bio, taille 3…" autocomplete="off">
       </div>
       <div class="two-col">
         <div class="form-group">
-          <label class="form-label">Rayon</label>
+          <label class="form-label" for="adv-category">Rayon</label>
           <select class="form-input" id="adv-category">
             <option value="Frais">🧊 Frais</option>
             <option value="Épicerie" selected>🛒 Épicerie</option>
@@ -107,27 +143,40 @@
         </div>
         <div class="form-group">
           <label class="form-label">Quantité</label>
-          <input class="form-input" type="number" id="adv-qty" value="1" min="1" inputmode="numeric">
+          <div class="qty-unit-row">
+            <input class="form-input" type="number" id="adv-qty" value="1" min="0" step="any" inputmode="decimal">
+            <select class="form-input unit-select" id="adv-unit">
+              <option value="x" selected>x</option>
+              <option value="g">g</option>
+              <option value="kg">kg</option>
+              <option value="L">L</option>
+              <option value="cL">cL</option>
+              <option value="pack">pack</option>
+            </select>
+          </div>
         </div>
       </div>
       <button class="btn-teal full" onclick="App.addAdvanced()">+ Ajouter à la liste</button>
     </div>
   </div>
- 
-  <!-- ③ HISTORIQUE -->
+
+  <!-- ════════ ③ ÉCRAN HISTORIQUE ════════ -->
   <div class="screen" id="screen-history">
+    <div id="stats-bar"></div>
     <div id="history-content"></div>
   </div>
- 
-  <!-- FINISH BAR — ici, en dehors des screens, dans le flex principal -->
+
+  <!-- Barre "Terminer les courses" (visible si articles cochés) -->
   <div id="finish-bar" style="display:none;">
     <button id="finish-btn" onclick="App.finishShopping()">✅ Terminer les courses</button>
   </div>
- 
+
+  <!-- ════════ NAVIGATION ════════ -->
   <nav>
     <button class="nav-btn active" data-screen="list" onclick="App.switchScreen('list')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
       Liste
+      <span id="nav-count" class="nav-count"></span>
     </button>
     <button class="nav-btn" data-screen="add" onclick="App.switchScreen('add')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
@@ -139,17 +188,22 @@
     </button>
   </nav>
 </div>
- 
-<div id="toast"></div>
- 
+
+<!-- Toast (notification éphémère, avec bouton "Annuler" optionnel) -->
+<div id="toast"><span id="toast-msg"></span><button id="toast-action"></button></div>
+
+<!-- ════════ SCRIPTS ════════
+     Ordre important : Firebase SDK → config → données → logique -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="js/firebase.js"></script>
 <script src="js/emojis.js"></script>
 <script src="js/app.js"></script>
 <script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/nojolist/sw.js');
+  // Enregistrement du Service Worker (cache hors-ligne + mises à jour).
+  // La détection de "nouvelle version disponible" est gérée dans app.js.
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/nojolist/sw.js").then(reg => App.watchForUpdates(reg));
   }
 </script>
 </body>

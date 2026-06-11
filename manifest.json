@@ -1,4 +1,5 @@
 {
+  "id": "/nojolist/",
   "name": "Nojolist",
   "short_name": "Nojolist",
   "description": "Liste de courses partagée pour Jonathan & Noémie",
@@ -9,6 +10,7 @@
   "background_color": "#FAF7F2",
   "theme_color": "#2E7D7F",
   "lang": "fr",
+  "categories": ["shopping", "productivity"],
   "icons": [
     { "src": "icons/icon-72x72.png", "sizes": "72x72", "type": "image/png" },
     { "src": "icons/icon-96x96.png", "sizes": "96x96", "type": "image/png" },
@@ -18,5 +20,21 @@
     { "src": "icons/icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
     { "src": "icons/icon-384x384.png", "sizes": "384x384", "type": "image/png" },
     { "src": "icons/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Ajouter un article",
+      "short_name": "Ajouter",
+      "description": "Aller directement à l'écran d'ajout",
+      "url": "/nojolist/?screen=add",
+      "icons": [{ "src": "icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Historique",
+      "short_name": "Historique",
+      "description": "Voir les courses précédentes",
+      "url": "/nojolist/?screen=history",
+      "icons": [{ "src": "icons/icon-96x96.png", "sizes": "96x96" }]
+    }
   ]
 }
