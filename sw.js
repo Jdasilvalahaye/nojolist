@@ -20,7 +20,7 @@
    • Firebase → jamais mis en cache (données temps réel).
    ============================================================ */
 
-const CACHE = "nojolist-v5"; // ← incrémente-moi à chaque déploiement !
+const CACHE = "nojolist-v3.1"; // ← incrémente-moi à chaque déploiement !
 
 const ASSETS = [
   "/nojolist/",

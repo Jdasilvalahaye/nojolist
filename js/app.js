@@ -29,7 +29,6 @@
    ============================================================ */
 
 const App = (() => {
-
   /* ════ 1. CONSTANTES ════ */
 
   const APP_VERSION = "2.0.0";
@@ -39,8 +38,14 @@ const App = (() => {
   // les <select> de index.html. C'est tout !
   const CAT_ORDER = ["Frais", "Surgelés", "Boulangerie", "Épicerie", "Boissons", "Hygiène", "Bébé", "Autre"];
   const CAT_ICONS = {
-    Frais: "🧊", Épicerie: "🛒", Bébé: "👶", Hygiène: "🧴",
-    Surgelés: "❄️", Boissons: "🥤", Boulangerie: "🥖", Autre: "📦",
+    Frais: "🧊",
+    Épicerie: "🛒",
+    Bébé: "👶",
+    Hygiène: "🧴",
+    Surgelés: "❄️",
+    Boissons: "🥤",
+    Boulangerie: "🥖",
+    Autre: "📦",
   };
 
   // Pas d'incrémentation des boutons +/− selon l'unité
@@ -50,28 +55,30 @@ const App = (() => {
   /* ════ 2. ÉTAT ════ */
 
   let state = {
-    lists: {},            // { id: { id, name, items: {} } }
+    lists: {}, // { id: { id, name, items: {} } }
     currentListId: null,
-    history: [],          // [ { id, date, listName, items: [] } ] trié récent → ancien
-    favorites: {},        // { cléNormalisée: { name, emoji, category, count } }
-    packs: {},            // { id: { id, name, emoji, items: [] } }
-    user: null,           // { initial: 'J'|'N', name }
+    history: [], // [ { id, date, listName, items: [] } ] trié récent → ancien
+    favorites: {}, // { cléNormalisée: { name, emoji, category, count } }
+    packs: {}, // { id: { id, name, emoji, items: [] } }
+    user: null, // { initial: 'J'|'N', name }
     dbReady: false,
     currentScreen: "list",
     searchQuery: "",
-    shopping: false,      // Mode Courses actif ?
-    theme: "auto",        // 'auto' | 'light' | 'dark'
+    shopping: false, // Mode Courses actif ?
+    theme: "auto", // 'auto' | 'light' | 'dark'
   };
 
   // Données volatiles (jamais sauvegardées) : utilisées pour
   // l'annulation et pour passer des objets aux clics sans les
   // encoder dans le HTML (plus propre et plus sûr qu'avant).
   let volatile = {
-    undo: null,           // { type, payload } dernière action annulable
-    acResults: [],        // résultats d'autocomplétion affichés
-    favShown: [],         // favoris affichés
-    wakeLock: null,       // verrou d'écran du Mode Courses
+    undo: null, // { type, payload } dernière action annulable
+    acResults: [], // résultats d'autocomplétion affichés
+    favShown: [], // favoris affichés
+    wakeLock: null, // verrou d'écran du Mode Courses
     swRegistration: null, // pour la mise à jour de l'app
+    packCandidates: [], // articles proposés à la création d'un pack
+    packSelected: [], // pour chaque candidat : true = inclus dans le pack
   };
 
   /* ════ 3. INITIALISATION ════ */
@@ -146,8 +153,9 @@ const App = (() => {
     state.theme = localStorage.getItem("nojolist_theme") || "auto";
     applyTheme();
     // Si réglé sur "auto", on suit en direct le réglage du téléphone
-    window.matchMedia("(prefers-color-scheme: dark)")
-      .addEventListener("change", () => { if (state.theme === "auto") applyTheme(); });
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+      if (state.theme === "auto") applyTheme();
+    });
   }
 
   function setTheme(theme) {
@@ -180,7 +188,7 @@ const App = (() => {
 
         // Restaurer la dernière liste consultée sur cet appareil
         const savedId = localStorage.getItem("listo_current_list");
-        state.currentListId = (savedId && state.lists[savedId]) ? savedId : Object.keys(state.lists)[0];
+        state.currentListId = savedId && state.lists[savedId] ? savedId : Object.keys(state.lists)[0];
 
         if (!state.dbReady) {
           state.dbReady = true;
@@ -220,8 +228,12 @@ const App = (() => {
     DB.onConnected((connected) => setSyncState(connected ? "connected" : "error"));
   }
 
-  function currentList() { return state.lists[state.currentListId] || { name: "", items: {} }; }
-  function currentItems() { return Object.values(currentList().items || {}); }
+  function currentList() {
+    return state.lists[state.currentListId] || { name: "", items: {} };
+  }
+  function currentItems() {
+    return Object.values(currentList().items || {});
+  }
 
   /* ════ 7. LISTES (créer / renommer / supprimer) ════ */
 
@@ -241,7 +253,9 @@ const App = (() => {
     state.currentListId = id;
     localStorage.setItem("listo_current_list", id);
     closeModal();
-    renderList(); updateHeader(); updateListPickerBtn();
+    renderList();
+    updateHeader();
+    updateListPickerBtn();
   }
 
   function deleteList(id) {
@@ -257,7 +271,9 @@ const App = (() => {
       localStorage.setItem("listo_current_list", state.currentListId);
     }
     openListPicker(); // re-rendre la modale
-    renderList(); updateHeader(); updateListPickerBtn();
+    renderList();
+    updateHeader();
+    updateListPickerBtn();
   }
 
   function promptRenameList(id) {
@@ -268,7 +284,8 @@ const App = (() => {
     list.name = name.trim();
     DB.renameList(id, list.name);
     openListPicker();
-    updateListPickerBtn(); updateHeader();
+    updateListPickerBtn();
+    updateHeader();
   }
 
   function updateListPickerBtn() {
@@ -280,7 +297,7 @@ const App = (() => {
     let html = `<div class="modal-title">Mes listes</div>`;
 
     for (const list of lists) {
-      const count = Object.values(list.items || {}).filter(i => !i.done).length;
+      const count = Object.values(list.items || {}).filter((i) => !i.done).length;
       const isActive = list.id === state.currentListId;
       html += `<div class="list-picker-item ${isActive ? "active-list" : ""}" data-action="switch-list" data-id="${esc(list.id)}">
         <div class="list-picker-name">${esc(list.name)}</div>
@@ -298,7 +315,9 @@ const App = (() => {
 
     openModal(html);
     const inp = document.getElementById("new-list-input");
-    inp?.addEventListener("keydown", e => { if (e.key === "Enter") submitNewList(); });
+    inp?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") submitNewList();
+    });
   }
 
   function submitNewList() {
@@ -314,8 +333,8 @@ const App = (() => {
 
   function switchScreen(name) {
     state.currentScreen = name;
-    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-    document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
+    document.querySelectorAll(".nav-btn").forEach((b) => b.classList.remove("active"));
     document.getElementById("screen-" + name).classList.add("active");
     document.querySelector(`[data-screen="${name}"]`).classList.add("active");
     if (name === "history") renderHistory();
@@ -324,8 +343,8 @@ const App = (() => {
 
   function updateHeader() {
     const items = currentItems();
-    const todo = items.filter(i => !i.done).length;
-    const done = items.filter(i => i.done).length;
+    const todo = items.filter((i) => !i.done).length;
+    const done = items.filter((i) => i.done).length;
     const sub = document.getElementById("header-subtitle");
 
     if (state.currentScreen === "list") {
@@ -351,14 +370,13 @@ const App = (() => {
     // Filtre de recherche (insensible aux accents)
     if (state.searchQuery) {
       const q = norm(state.searchQuery);
-      items = items.filter(i => norm(i.name).includes(q) || norm(i.note || "").includes(q));
+      items = items.filter((i) => norm(i.name).includes(q) || norm(i.note || "").includes(q));
     }
 
-    const todo = items.filter(i => !i.done);
-    const done = items.filter(i => i.done);
+    const todo = items.filter((i) => !i.done);
+    const done = items.filter((i) => i.done);
 
-    document.getElementById("finish-bar").style.display =
-      currentItems().some(i => i.done) ? "block" : "none";
+    document.getElementById("finish-bar").style.display = currentItems().some((i) => i.done) ? "block" : "none";
 
     updateProgress();
 
@@ -373,12 +391,16 @@ const App = (() => {
 
     if (todo.length > 0) {
       // Regroupement par rayon, dans l'ordre du magasin
-      const cats = [...new Set(todo.map(i => i.category))]
-        .sort((a, b) => CAT_ORDER.indexOf(a) - CAT_ORDER.indexOf(b));
+      const cats = [...new Set(todo.map((i) => i.category))].sort(
+        (a, b) => CAT_ORDER.indexOf(a) - CAT_ORDER.indexOf(b),
+      );
       html += `<div class="section-label">À acheter · ${todo.length}</div>`;
       for (const cat of cats) {
         html += `<div class="section-sublabel">${CAT_ICONS[cat] || "📦"} ${esc(cat)}</div>`;
-        html += `<div class="item-list">${todo.filter(i => i.category === cat).map(renderItem).join("")}</div>`;
+        html += `<div class="item-list">${todo
+          .filter((i) => i.category === cat)
+          .map(renderItem)
+          .join("")}</div>`;
       }
     }
 
@@ -430,11 +452,10 @@ const App = (() => {
   function updateProgress() {
     if (!state.shopping) return;
     const items = currentItems();
-    const done = items.filter(i => i.done).length;
+    const done = items.filter((i) => i.done).length;
     const pct = items.length ? Math.round((done / items.length) * 100) : 0;
     document.getElementById("progress-fill").style.width = pct + "%";
-    document.getElementById("progress-label").textContent =
-      items.length ? `${done}/${items.length} · ${pct}%` : "";
+    document.getElementById("progress-label").textContent = items.length ? `${done}/${items.length} · ${pct}%` : "";
   }
 
   /* ════ FAVORIS (articles fréquents) ════ */
@@ -447,17 +468,24 @@ const App = (() => {
 
     volatile.favShown = sorted; // mémorisés pour le clic (par index)
 
-    if (sorted.length === 0) { bar.classList.remove("visible"); return; }
+    if (sorted.length === 0) {
+      bar.classList.remove("visible");
+      return;
+    }
 
     bar.classList.add("visible");
     bar.innerHTML = `<div class="fav-label">⭐ Fréquents</div>
-      <div class="fav-chips">${sorted.map((f, i) =>
-        `<div class="fav-chip" data-action="add-fav" data-idx="${i}">${esc(f.emoji)} ${esc(f.name)}</div>`
-      ).join("")}</div>`;
+      <div class="fav-chips">${sorted
+        .map(
+          (f, i) => `<div class="fav-chip" data-action="add-fav" data-idx="${i}">${esc(f.emoji)} ${esc(f.name)}</div>`,
+        )
+        .join("")}</div>`;
   }
 
   function updateFavorites(name, emoji, category) {
-    const key = norm(name).replace(/\s+/g, "_").replace(/[.#$/\[\]]/g, ""); // caractères interdits par Firebase
+    const key = norm(name)
+      .replace(/\s+/g, "_")
+      .replace(/[.#$/\[\]]/g, ""); // caractères interdits par Firebase
     if (!key) return;
     const existing = state.favorites[key] || { name, emoji, category, count: 0 };
     existing.count += 1;
@@ -469,19 +497,27 @@ const App = (() => {
 
   function renderAutocomplete(query) {
     const list = document.getElementById("autocomplete-list");
-    if (!query || query.length < 2) { list.classList.remove("visible"); return; }
+    if (!query || query.length < 2) {
+      list.classList.remove("visible");
+      return;
+    }
 
     const q = norm(query);
     const candidates = new Map();
 
     // 1) Favoris  2) Historique — sans doublons
-    Object.values(state.favorites).forEach(f => {
+    Object.values(state.favorites).forEach((f) => {
       if (norm(f.name).includes(q)) candidates.set(f.name.toLowerCase(), f);
     });
-    state.history.forEach(session => {
-      (session.items || []).forEach(item => {
+    state.history.forEach((session) => {
+      (session.items || []).forEach((item) => {
         if (norm(item.name).includes(q) && !candidates.has(item.name.toLowerCase())) {
-          candidates.set(item.name.toLowerCase(), { name: item.name, emoji: item.emoji, category: item.category, count: 0 });
+          candidates.set(item.name.toLowerCase(), {
+            name: item.name,
+            emoji: item.emoji,
+            category: item.category,
+            count: 0,
+          });
         }
       });
     });
@@ -489,14 +525,21 @@ const App = (() => {
     const results = [...candidates.values()].slice(0, 5);
     volatile.acResults = results;
 
-    if (results.length === 0) { list.classList.remove("visible"); return; }
+    if (results.length === 0) {
+      list.classList.remove("visible");
+      return;
+    }
 
-    list.innerHTML = results.map((r, i) =>
-      `<div class="ac-item" data-action="ac-select" data-idx="${i}">
+    list.innerHTML = results
+      .map(
+        (r, i) =>
+          `<div class="ac-item" data-action="ac-select" data-idx="${i}">
         <span class="ac-emoji">${esc(r.emoji)}</span>
         <span class="ac-name">${esc(r.name)}</span>
         <span class="ac-cat">${esc(r.category)}</span>
-      </div>`).join("");
+      </div>`,
+      )
+      .join("");
     list.classList.add("visible");
   }
 
@@ -505,7 +548,10 @@ const App = (() => {
   function quickAdd() {
     const input = document.getElementById("quick-input");
     const val = input.value.trim();
-    if (!val) { showToast("Saisis un nom d'article", "error"); return; }
+    if (!val) {
+      showToast("Saisis un nom d'article", "error");
+      return;
+    }
     input.value = "";
     document.getElementById("autocomplete-list").classList.remove("visible");
     addItem({ name: val, emoji: getEmoji(val), category: guessCategory(val), qty: 1, unit: "x", note: "" });
@@ -513,7 +559,10 @@ const App = (() => {
 
   function addAdvanced() {
     const name = document.getElementById("adv-name").value.trim();
-    if (!name) { showToast("Saisis un nom d'article", "error"); return; }
+    if (!name) {
+      showToast("Saisis un nom d'article", "error");
+      return;
+    }
     addItem({
       name,
       emoji: getEmoji(name),
@@ -529,7 +578,10 @@ const App = (() => {
   }
 
   function addItem({ name, emoji, category, qty, unit, note }, options = {}) {
-    if (!state.user) { showToast("Choisis ton profil d'abord", "error"); return; }
+    if (!state.user) {
+      showToast("Choisis ton profil d'abord", "error");
+      return;
+    }
     if (!state.currentListId) return;
 
     const list = state.lists[state.currentListId];
@@ -538,20 +590,20 @@ const App = (() => {
 
     // Anti-doublon : si l'article existe déjà (non coché), on
     // augmente sa quantité au lieu de créer une seconde ligne.
-    const existing = Object.values(list.items).find(
-      i => i.name.toLowerCase() === name.toLowerCase() && !i.done,
-    );
+    const existing = Object.values(list.items).find((i) => i.name.toLowerCase() === name.toLowerCase() && !i.done);
     if (existing) {
       existing.qty = (existing.qty || 1) + (qty || 1);
       DB.updateItem(state.currentListId, existing.id, { qty: existing.qty });
       if (!options.silent) showToast(`Quantité de ${existing.name} augmentée`, "success");
-      renderList(); updateHeader();
+      renderList();
+      updateHeader();
       return;
     }
 
     const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
     const item = {
-      id, name,
+      id,
+      name,
       emoji: emoji || getEmoji(name),
       category: category || "Épicerie",
       qty: qty || 1,
@@ -562,11 +614,13 @@ const App = (() => {
       addedAt: Date.now(),
     };
 
-    list.items[id] = item;            // mise à jour locale immédiate…
+    list.items[id] = item; // mise à jour locale immédiate…
     DB.setItem(state.currentListId, id, item); // …puis envoi à Firebase (granulaire)
 
     updateFavorites(item.name, item.emoji, item.category);
-    renderList(); renderFavorites(); updateHeader();
+    renderList();
+    renderFavorites();
+    updateHeader();
 
     if (!options.silent) {
       showToast(`${name} ajouté ✓`, "success");
@@ -583,44 +637,92 @@ const App = (() => {
       bar.innerHTML = `<div class="packs-empty">Sauvegarde des kits d'articles (ex. «&nbsp;Raclette&nbsp;») pour les rajouter en un geste.</div>`;
       return;
     }
-    bar.innerHTML = packs.map(p =>
-      `<div class="pack-chip" data-action="add-pack" data-id="${esc(p.id)}">
+    bar.innerHTML = packs
+      .map(
+        (p) =>
+          `<div class="pack-chip" data-action="add-pack" data-id="${esc(p.id)}">
         ${esc(p.emoji || "📦")} ${esc(p.name)}
         <span class="pack-count">${(p.items || []).length}</span>
         <button class="pack-del" data-action="delete-pack" data-id="${esc(p.id)}" title="Supprimer le pack">×</button>
-      </div>`).join("");
+      </div>`,
+      )
+      .join("");
   }
 
   // Crée un pack à partir des articles NON COCHÉS de la liste actuelle
   function openPackCreator() {
-    const items = currentItems().filter(i => !i.done);
+    const items = currentItems().filter((i) => !i.done);
     if (items.length === 0) {
       showToast("Ajoute d'abord des articles à ta liste", "error");
       return;
     }
-    const preview = items.slice(0, 6).map(i => `${i.emoji} ${esc(i.name)}`).join(" · ")
-      + (items.length > 6 ? ` · +${items.length - 6}` : "");
+
+    // On mémorise les candidats dans volatile (référencés par index),
+    // tous sélectionnés par défaut. Jonathan décoche ce qu'il ne veut pas.
+    volatile.packCandidates = items;
+    volatile.packSelected = items.map(() => true);
+
+    const rows = items
+      .map(
+        (i, idx) => `
+      <label class="pack-pick-row">
+        <input type="checkbox" checked data-action="toggle-pack-item" data-idx="${idx}">
+        <span class="pack-pick-emoji">${i.emoji}</span>
+        <span class="pack-pick-name">${esc(i.name)}</span>
+      </label>
+    `,
+      )
+      .join("");
 
     openModal(`
       <div class="modal-title">📦 Créer un pack</div>
-      <p style="font-size:13px;color:var(--text3);line-height:1.5;margin-bottom:14px;">
-        Les <b>${items.length} articles à acheter</b> de ta liste actuelle seront enregistrés
-        comme un kit réutilisable :<br><span style="font-size:12px;">${preview}</span>
+      <p style="font-size:13px;color:var(--text3);line-height:1.5;margin-bottom:10px;">
+        Décoche les articles que tu ne veux <b>pas</b> inclure dans le pack :
       </p>
+      <div class="pack-pick-list">${rows}</div>
       <div class="edit-row">
         <div class="edit-label">Nom du pack</div>
         <input class="edit-input" type="text" id="pack-name" placeholder="Ex: Raclette, Petit-déj, Apéro…" autocomplete="off">
       </div>
-      <button class="btn-save" data-action="save-pack">Enregistrer le pack</button>
+      <button class="btn-save" data-action="save-pack">
+        Enregistrer le pack (<span id="pack-count">${items.length}</span> articles)
+      </button>
     `);
     setTimeout(() => document.getElementById("pack-name")?.focus(), 250);
   }
 
+  function togglePackItem(el) {
+    const idx = Number(el.dataset.idx);
+    volatile.packSelected[idx] = el.checked;
+    // Mise à jour du compteur sur le bouton
+    const count = volatile.packSelected.filter(Boolean).length;
+    const span = document.getElementById("pack-count");
+    if (span) span.textContent = count;
+  }
+
   function savePack() {
     const name = document.getElementById("pack-name")?.value.trim();
-    if (!name) { showToast("Donne un nom au pack", "error"); return; }
-    const items = currentItems().filter(i => !i.done)
-      .map(i => ({ name: i.name, emoji: i.emoji, category: i.category, qty: i.qty || 1, unit: i.unit || "x", note: i.note || "" }));
+    if (!name) {
+      showToast("Donne un nom au pack", "error");
+      return;
+    }
+
+    // On ne garde que les articles restés cochés dans la fenêtre
+    const items = volatile.packCandidates
+      .filter((_, idx) => volatile.packSelected[idx])
+      .map((i) => ({
+        name: i.name,
+        emoji: i.emoji,
+        category: i.category,
+        qty: i.qty || 1,
+        unit: i.unit || "x",
+        note: i.note || "",
+      }));
+
+    if (items.length === 0) {
+      showToast("Sélectionne au moins un article", "error");
+      return;
+    }
 
     const id = Date.now().toString(36);
     const pack = { id, name, emoji: getEmoji(name), items, createdAt: Date.now() };
@@ -634,7 +736,7 @@ const App = (() => {
   function addPack(id) {
     const pack = state.packs[id];
     if (!pack) return;
-    (pack.items || []).forEach(i => addItem({ ...i }, { silent: true }));
+    (pack.items || []).forEach((i) => addItem({ ...i }, { silent: true }));
     showToast(`${pack.items.length} articles du pack « ${pack.name} » ajoutés ✓`, "success");
     switchScreen("list");
   }
@@ -655,7 +757,8 @@ const App = (() => {
     list.items[id].done = !list.items[id].done;
     DB.updateItem(state.currentListId, id, { done: list.items[id].done });
     if (list.items[id].done) vibrate(15); // petit retour haptique (Android)
-    renderList(); updateHeader();
+    renderList();
+    updateHeader();
   }
 
   function changeQty(id, delta) {
@@ -678,7 +781,8 @@ const App = (() => {
 
     delete list.items[id];
     DB.removeItem(state.currentListId, id);
-    renderList(); updateHeader();
+    renderList();
+    updateHeader();
 
     volatile.undo = { type: "delete-item", item: removed, listId: state.currentListId };
     showToast(`${removed.name} supprimé`, "", { label: "Annuler", onAction: undoLast });
@@ -708,7 +812,8 @@ const App = (() => {
       showToast("Courses restaurées ✓", "success");
     }
 
-    renderList(); updateHeader();
+    renderList();
+    updateHeader();
   }
 
   /* ════ ÉDITION D'ARTICLE (modale) ════ */
@@ -717,11 +822,11 @@ const App = (() => {
     const item = state.lists[state.currentListId]?.items?.[id];
     if (!item) return;
 
-    const catOptions = CAT_ORDER
-      .map(c => `<option value="${c}" ${c === item.category ? "selected" : ""}>${CAT_ICONS[c]} ${c}</option>`)
-      .join("");
+    const catOptions = CAT_ORDER.map(
+      (c) => `<option value="${c}" ${c === item.category ? "selected" : ""}>${CAT_ICONS[c]} ${c}</option>`,
+    ).join("");
     const unitOptions = Object.keys(UNIT_STEPS)
-      .map(u => `<option value="${u}" ${u === (item.unit || "x") ? "selected" : ""}>${u}</option>`)
+      .map((u) => `<option value="${u}" ${u === (item.unit || "x") ? "selected" : ""}>${u}</option>`)
       .join("");
 
     openModal(`
@@ -766,8 +871,12 @@ const App = (() => {
     item.emoji = getEmoji(name);
 
     DB.updateItem(state.currentListId, id, {
-      name: item.name, note: item.note, category: item.category,
-      qty: item.qty, unit: item.unit, emoji: item.emoji,
+      name: item.name,
+      note: item.note,
+      category: item.category,
+      qty: item.qty,
+      unit: item.unit,
+      emoji: item.emoji,
     });
     closeModal();
     renderList();
@@ -780,8 +889,8 @@ const App = (() => {
     const list = state.lists[state.currentListId];
     if (!list) return;
     const items = Object.values(list.items || {});
-    const done = items.filter(i => i.done);
-    const remaining = items.filter(i => !i.done);
+    const done = items.filter((i) => i.done);
+    const remaining = items.filter((i) => !i.done);
     if (done.length === 0) return;
 
     // Snapshot AVANT modification → permet l'annulation
@@ -797,7 +906,9 @@ const App = (() => {
 
     // Les non-cochés restent dans la liste, les cochés partent en historique
     const newItems = {};
-    remaining.forEach(i => { newItems[i.id] = { ...i, done: false }; });
+    remaining.forEach((i) => {
+      newItems[i.id] = { ...i, done: false };
+    });
     list.items = newItems;
 
     DB.setItems(state.currentListId, newItems);
@@ -805,11 +916,14 @@ const App = (() => {
 
     if (state.shopping) toggleShoppingMode(); // on sort du Mode Courses
 
-    renderList(); updateHeader();
+    renderList();
+    updateHeader();
 
     volatile.undo = { type: "finish", listId: state.currentListId, itemsSnapshot: snapshot, sessionId: session.id };
-    showToast(`${done.length} article${done.length > 1 ? "s" : ""} archivé${done.length > 1 ? "s" : ""} ✓`, "success",
-      { label: "Annuler", onAction: undoLast });
+    showToast(`${done.length} article${done.length > 1 ? "s" : ""} archivé${done.length > 1 ? "s" : ""} ✓`, "success", {
+      label: "Annuler",
+      onAction: undoLast,
+    });
   }
 
   /* ════ 13. HISTORIQUE & STATS ════ */
@@ -825,7 +939,11 @@ const App = (() => {
 
     let html = "";
     for (const session of state.history) {
-      const date = new Date(session.date).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+      const date = new Date(session.date).toLocaleDateString("fr-FR", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+      });
       const count = (session.items || []).length;
       html += `<div class="history-session">
         <div class="history-session-header">
@@ -860,7 +978,10 @@ const App = (() => {
     const totalItems = state.history.reduce((sum, s) => sum + (s.items || []).length, 0);
     const top = Object.values(state.favorites).sort((a, b) => b.count - a.count)[0];
 
-    if (sessions === 0) { bar.innerHTML = ""; return; }
+    if (sessions === 0) {
+      bar.innerHTML = "";
+      return;
+    }
 
     bar.innerHTML = `
       <div class="stat-card"><div class="stat-num">${sessions}</div><div class="stat-lbl">courses</div></div>
@@ -869,17 +990,35 @@ const App = (() => {
   }
 
   function addFromHistory(sessionId, idx) {
-    const session = state.history.find(s => s.id === sessionId);
+    const session = state.history.find((s) => s.id === sessionId);
     const item = session?.items?.[idx];
     if (!item) return;
-    addItem({ name: item.name, emoji: item.emoji, category: item.category, qty: item.qty || 1, unit: item.unit || "x", note: item.note || "" });
+    addItem({
+      name: item.name,
+      emoji: item.emoji,
+      category: item.category,
+      qty: item.qty || 1,
+      unit: item.unit || "x",
+      note: item.note || "",
+    });
   }
 
   function recreateList(sessionId) {
-    const session = state.history.find(s => s.id === sessionId);
+    const session = state.history.find((s) => s.id === sessionId);
     if (!session) return;
-    (session.items || []).forEach(i =>
-      addItem({ name: i.name, emoji: i.emoji, category: i.category, qty: i.qty || 1, unit: i.unit || "x", note: i.note || "" }, { silent: true }));
+    (session.items || []).forEach((i) =>
+      addItem(
+        {
+          name: i.name,
+          emoji: i.emoji,
+          category: i.category,
+          qty: i.qty || 1,
+          unit: i.unit || "x",
+          note: i.note || "",
+        },
+        { silent: true },
+      ),
+    );
     showToast(`${session.items.length} articles ajoutés ✓`, "success");
     switchScreen("list");
   }
@@ -893,24 +1032,32 @@ const App = (() => {
   /* ════ 14. PARTAGE DE LA LISTE ════ */
 
   async function shareList() {
-    const items = currentItems().filter(i => !i.done);
-    if (items.length === 0) { showToast("Rien à partager : liste vide", "error"); return; }
+    const items = currentItems().filter((i) => !i.done);
+    if (items.length === 0) {
+      showToast("Rien à partager : liste vide", "error");
+      return;
+    }
 
     // On génère un texte propre, groupé par rayon
-    const cats = [...new Set(items.map(i => i.category))]
-      .sort((a, b) => CAT_ORDER.indexOf(a) - CAT_ORDER.indexOf(b));
+    const cats = [...new Set(items.map((i) => i.category))].sort((a, b) => CAT_ORDER.indexOf(a) - CAT_ORDER.indexOf(b));
     let text = `🛒 ${currentList().name} — Nojolist\n`;
     for (const cat of cats) {
       text += `\n${CAT_ICONS[cat] || "📦"} ${cat}\n`;
-      items.filter(i => i.category === cat).forEach(i => {
-        text += `  • ${i.name}${(i.qty > 1 || (i.unit && i.unit !== "x")) ? ` (${fmtQty(i)})` : ""}${i.note ? ` — ${i.note}` : ""}\n`;
-      });
+      items
+        .filter((i) => i.category === cat)
+        .forEach((i) => {
+          text += `  • ${i.name}${i.qty > 1 || (i.unit && i.unit !== "x") ? ` (${fmtQty(i)})` : ""}${i.note ? ` — ${i.note}` : ""}\n`;
+        });
     }
 
     closeModal();
     // API native de partage (mobile) → sinon copie dans le presse-papier
     if (navigator.share) {
-      try { await navigator.share({ title: "Nojolist", text }); } catch (e) { /* partage annulé */ }
+      try {
+        await navigator.share({ title: "Nojolist", text });
+      } catch (e) {
+        /* partage annulé */
+      }
     } else {
       await navigator.clipboard.writeText(text);
       showToast("Liste copiée dans le presse-papier ✓", "success");
@@ -920,8 +1067,15 @@ const App = (() => {
   /* ════ RÉGLAGES ════ */
 
   function openSettings() {
-    const themeBtns = [["auto", "Auto"], ["light", "Clair"], ["dark", "Sombre"]]
-      .map(([v, l]) => `<button class="seg-btn ${state.theme === v ? "active" : ""}" data-action="set-theme" data-theme="${v}">${l}</button>`)
+    const themeBtns = [
+      ["auto", "Auto"],
+      ["light", "Clair"],
+      ["dark", "Sombre"],
+    ]
+      .map(
+        ([v, l]) =>
+          `<button class="seg-btn ${state.theme === v ? "active" : ""}" data-action="set-theme" data-theme="${v}">${l}</button>`,
+      )
       .join("");
 
     openModal(`
@@ -974,12 +1128,20 @@ const App = (() => {
     btn.className = action ? "visible" : "";
     if (action) {
       btn.textContent = action.label;
-      btn.onclick = () => { t.className = ""; action.onAction(); };
+      btn.onclick = () => {
+        t.className = "";
+        action.onAction();
+      };
     }
 
     t.className = "show" + (type ? " " + type : "");
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { t.className = ""; }, action ? 5000 : 2500);
+    toastTimer = setTimeout(
+      () => {
+        t.className = "";
+      },
+      action ? 5000 : 2500,
+    );
   }
 
   /* ════ 16. MODE COURSES ════ */
@@ -987,8 +1149,7 @@ const App = (() => {
   function toggleShoppingMode() {
     state.shopping = !state.shopping;
     document.body.classList.toggle("shopping", state.shopping);
-    document.getElementById("shop-mode-btn").textContent =
-      state.shopping ? "✕ Quitter" : "🛒 Mode courses";
+    document.getElementById("shop-mode-btn").textContent = state.shopping ? "✕ Quitter" : "🛒 Mode courses";
 
     if (state.shopping) {
       requestWakeLock(); // l'écran ne s'éteint plus
@@ -1007,7 +1168,9 @@ const App = (() => {
       if ("wakeLock" in navigator) {
         volatile.wakeLock = await navigator.wakeLock.request("screen");
       }
-    } catch (e) { /* batterie faible ou non supporté : pas grave */ }
+    } catch (e) {
+      /* batterie faible ou non supporté : pas grave */
+    }
   }
 
   function releaseWakeLock() {
@@ -1021,7 +1184,9 @@ const App = (() => {
   });
 
   // Vibration courte (Android uniquement ; sans effet sur iPhone)
-  function vibrate(ms) { navigator.vibrate?.(ms); }
+  function vibrate(ms) {
+    navigator.vibrate?.(ms);
+  }
 
   /* ════ 17. MISE À JOUR DE L'APP (Service Worker) ════
      Quand tu pousses une nouvelle version sur GitHub Pages, le
@@ -1036,8 +1201,7 @@ const App = (() => {
       newWorker?.addEventListener("statechange", () => {
         // "installed" + un SW déjà actif = une mise à jour attend
         if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-          showToast("Nouvelle version disponible", "success",
-            { label: "Mettre à jour", onAction: applyUpdate });
+          showToast("Nouvelle version disponible", "success", { label: "Mettre à jour", onAction: applyUpdate });
         }
       });
     });
@@ -1055,16 +1219,24 @@ const App = (() => {
   // Échappe les caractères spéciaux HTML (sécurité de l'affichage)
   function esc(str) {
     return String(str ?? "")
-      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 
   // Normalise un texte : minuscules, sans accents (pour comparer)
   function norm(str) {
-    return String(str || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return String(str || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
   }
 
-  function hide(id) { document.getElementById(id).classList.add("hidden"); }
+  function hide(id) {
+    document.getElementById(id).classList.add("hidden");
+  }
 
   /* ════ ÉVÉNEMENTS ════
      DÉLÉGATION : au lieu de mettre onclick="…" sur chaque élément
@@ -1074,26 +1246,39 @@ const App = (() => {
      d'échappement. */
 
   const ACTIONS = {
-    "toggle":           el => toggleItem(el.dataset.id),
-    "qty":              el => changeQty(el.dataset.id, parseInt(el.dataset.delta)),
-    "delete":           el => deleteItem(el.dataset.id),
-    "edit":             el => { if (!state.shopping) openEditItem(el.dataset.id); },
-    "save-edit":        el => saveEditItem(el.dataset.id),
-    "add-fav":          el => { const f = volatile.favShown[el.dataset.idx]; if (f) addItem({ name: f.name, emoji: f.emoji, category: f.category, qty: 1, unit: "x", note: "" }); },
-    "ac-select":        el => { const r = volatile.acResults[el.dataset.idx]; if (r) { document.getElementById("quick-input").value = ""; document.getElementById("autocomplete-list").classList.remove("visible"); addItem({ name: r.name, emoji: r.emoji, category: r.category, qty: 1, unit: "x", note: "" }); } },
-    "switch-list":      el => switchList(el.dataset.id),
-    "rename-list":      el => promptRenameList(el.dataset.id),
-    "delete-list":      el => deleteList(el.dataset.id),
-    "create-list":      () => submitNewList(),
-    "add-pack":         el => addPack(el.dataset.id),
-    "delete-pack":      el => deletePack(el.dataset.id),
-    "save-pack":        () => savePack(),
-    "recreate":         el => recreateList(el.dataset.id),
-    "delete-session":   el => deleteSession(el.dataset.id),
-    "add-from-history": el => addFromHistory(el.dataset.sid, parseInt(el.dataset.idx)),
-    "set-theme":        el => setTheme(el.dataset.theme),
-    "switch-user":      () => switchUser(),
-    "share-list":       () => shareList(),
+    toggle: (el) => toggleItem(el.dataset.id),
+    qty: (el) => changeQty(el.dataset.id, parseInt(el.dataset.delta)),
+    delete: (el) => deleteItem(el.dataset.id),
+    edit: (el) => {
+      if (!state.shopping) openEditItem(el.dataset.id);
+    },
+    "save-edit": (el) => saveEditItem(el.dataset.id),
+    "add-fav": (el) => {
+      const f = volatile.favShown[el.dataset.idx];
+      if (f) addItem({ name: f.name, emoji: f.emoji, category: f.category, qty: 1, unit: "x", note: "" });
+    },
+    "ac-select": (el) => {
+      const r = volatile.acResults[el.dataset.idx];
+      if (r) {
+        document.getElementById("quick-input").value = "";
+        document.getElementById("autocomplete-list").classList.remove("visible");
+        addItem({ name: r.name, emoji: r.emoji, category: r.category, qty: 1, unit: "x", note: "" });
+      }
+    },
+    "switch-list": (el) => switchList(el.dataset.id),
+    "rename-list": (el) => promptRenameList(el.dataset.id),
+    "delete-list": (el) => deleteList(el.dataset.id),
+    "create-list": () => submitNewList(),
+    "add-pack": (el) => addPack(el.dataset.id),
+    "delete-pack": (el) => deletePack(el.dataset.id),
+    "save-pack": () => savePack(),
+    "toggle-pack-item": (el) => togglePackItem(el),
+    recreate: (el) => recreateList(el.dataset.id),
+    "delete-session": (el) => deleteSession(el.dataset.id),
+    "add-from-history": (el) => addFromHistory(el.dataset.sid, parseInt(el.dataset.idx)),
+    "set-theme": (el) => setTheme(el.dataset.theme),
+    "switch-user": () => switchUser(),
+    "share-list": () => shareList(),
   };
 
   function bindEvents() {
@@ -1112,10 +1297,14 @@ const App = (() => {
     });
 
     // Champs de saisie
-    document.getElementById("quick-input").addEventListener("keydown", e => { if (e.key === "Enter") quickAdd(); });
-    document.getElementById("quick-input").addEventListener("input", e => renderAutocomplete(e.target.value));
-    document.getElementById("adv-name").addEventListener("keydown", e => { if (e.key === "Enter") addAdvanced(); });
-    document.getElementById("search-input").addEventListener("input", e => {
+    document.getElementById("quick-input").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") quickAdd();
+    });
+    document.getElementById("quick-input").addEventListener("input", (e) => renderAutocomplete(e.target.value));
+    document.getElementById("adv-name").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") addAdvanced();
+    });
+    document.getElementById("search-input").addEventListener("input", (e) => {
       state.searchQuery = e.target.value.trim();
       renderList();
     });
