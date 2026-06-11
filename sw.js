@@ -20,7 +20,7 @@
    • Firebase → jamais mis en cache (données temps réel).
    ============================================================ */
 
-const CACHE = "nojolist-v4"; // ← incrémente-moi à chaque déploiement !
+const CACHE = "nojolist-v5"; // ← incrémente-moi à chaque déploiement !
 
 const ASSETS = [
   "/nojolist/",
@@ -51,9 +51,10 @@ self.addEventListener("message", (e) => {
 /* ACTIVATE : on supprime les vieux caches (nojolist-v3, etc.) */
 self.addEventListener("activate", (e) => {
   e.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-    ).then(() => self.clients.claim())
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim()),
   );
 });
 
@@ -62,7 +63,7 @@ self.addEventListener("fetch", (e) => {
   const url = e.request.url;
 
   // 1) Firebase & co : on n'intercepte PAS (temps réel oblige)
-  if (url.includes("firebase") || url.includes("googleapis") && url.includes("database")) return;
+  if (url.includes("firebase") || (url.includes("googleapis") && url.includes("database"))) return;
   if (e.request.method !== "GET") return;
 
   // 2) Navigation (ouverture de l'app) : réseau d'abord, cache en secours
@@ -74,7 +75,7 @@ self.addEventListener("fetch", (e) => {
           caches.open(CACHE).then((c) => c.put(e.request, copy));
           return res;
         })
-        .catch(() => caches.match("/nojolist/index.html"))
+        .catch(() => caches.match("/nojolist/index.html")),
     );
     return;
   }
@@ -92,6 +93,6 @@ self.addEventListener("fetch", (e) => {
         })
         .catch(() => cached); // hors-ligne : on garde le cache
       return cached || fetchPromise;
-    })
+    }),
   );
 });
